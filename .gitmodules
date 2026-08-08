@@ -1,0 +1,9 @@
+[submodule "foundry-fundme-f23"]
+	path = foundry-fundme-f23
+	url = git@github.com:mabsattar/foundry-fundme-cu.git
+[submodule "foundry-simplestorage-f23"]
+	path = foundry-simplestorage-f23
+	url = git@github.com:mabsattar/foundry-simplestorage-cu.git
+[submodule "foundry-smartcontract-lottery-f23"]
+	path = foundry-smartcontract-lottery-f23
+	url = git@github.com:mabsattar/foundry-lottery-smartcontract-cu.git
