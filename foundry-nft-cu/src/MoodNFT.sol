@@ -10,7 +10,7 @@ contract MoodNFT is ERC721 {
     string private s_happySvgImageUri;
     uint256 private s_tokenCounter;
 
-    error MoodNFT__CanFlipMoodIfNotOwner();
+    error MoodNFT__CantFlipMoodIfNotOwner();
 
     mapping(uint256 => Mood) private s_tokenIdToMood;
 
@@ -60,9 +60,15 @@ contract MoodNFT is ERC721 {
         return "data:application/json;Base64,";
     }
 
-    function flipMood(uint256 tokenId) public {
-        if (!isApprovedOrOwner(msg.sender, tokenId)) {
-            revert MoodNFT__CanFlipMoodIfNotOwner();
+    function flipMood(uint256 tokenId) public view {
+        if (getApproved(tokenId) != msg.sender && ownerOf(tokenId) != msg.sender) {
+            revert MoodNFT__CantFlipMoodIfNotOwner();
+        }
+
+        if (s_tokenIdToMood[tokenId] == Mood.HAPPY) {
+            s_tokenIdTooMood[tokenId] == Mood.SAD;
+        } else {
+            s_tokenIdToMood[tokenId] == Mood.HAPPY;
         }
     }
 }
