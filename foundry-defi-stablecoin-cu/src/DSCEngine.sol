@@ -48,6 +48,7 @@ contract DSCEngine {
     /* errors */
     error DSCEngine__NeedsMoreThanZero();
     error DSCEngine__TokenAddressesAndPriceFeedAddressesMustBeSameLength();
+    error DSCEngine__NotAllowedToken();
 
     /* state variables */
     mapping(address token => address priceFeed) private s_priceFeeds;
@@ -62,7 +63,12 @@ contract DSCEngine {
         _;
     }
 
-    modifier isAllowedToken(address token) {}
+    modifier isAllowedToken(address token) {
+        if (priceFeeds[token] == address(0)) {
+            revert DSCEngine__NotAllowedToken();
+        }
+        _;
+    }
 
     /* functions */
     constructor(address[] memory tokenAddresses, address[] memory priceFeedAddresses, address dscAddress) {
@@ -88,5 +94,8 @@ contract DSCEngine {
        @param amountCollateral: The amount of collateral you're depositing
      */
 
-    function depositCollateral(address tokenCollateralAddress, uint256 amountCollateral) external {}
+    function depositCollateral(address tokenCollateralAddress, uint256 amountCollateral)
+        external
+        moreThanZero(amountCollateral)
+    {}
 }
