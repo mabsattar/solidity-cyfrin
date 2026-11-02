@@ -88,15 +88,6 @@ contract DSCEngine is ReentrancyGuard {
         i_dsc = DecentralizedStableCoin(dscAddress);
     }
 
-    /* external functions */
-    function mintDSC() external {}
-
-    function burnDSC() external {}
-
-    function liquidate() external {}
-
-    function getHealthFactor() external {}
-
     /*
        @notice follows CEI pattern
      * @param tokenCollateralAddress: The ERC20 token address of the collateral you're depositing
