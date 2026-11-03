@@ -1,3 +1,6 @@
 [submodule "foundry-nft-cu/lib/foundry-devops"]
 	path = foundry-nft-cu/lib/foundry-devops
 	url = https://github.com/Cyfrin/foundry-devops
+[submodule "foundry-defi-stablecoin-cu/lib/chainlink-brownie-contracts"]
+	path = foundry-defi-stablecoin-cu/lib/chainlink-brownie-contracts
+	url = https://github.com/smartcontractkit/chainlink-brownie-contracts
