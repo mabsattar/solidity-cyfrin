@@ -155,6 +155,9 @@ contract DSCEngine is ReentrancyGuard {
         s_DSCMinted[msg.sender] += amountDscToMint;
         _revertIfHealthFactorIsBroken(msg.sender);
 		bool minted = i_dsc.mint(msg.sender, amountDscToMint);
+		if(!minted) {
+			revert DSCEngine__MintFailed();
+		}
     }
 
     function burnDsc() external {}
@@ -172,10 +175,6 @@ contract DSCEngine is ReentrancyGuard {
         if (userHealthFactor < MIN_HEALTH_FACTOR) {
             revert DSCEngine__BreaksHealthFactor(userHealthFactor);
         }
-
-		if(!minted) {
-			revert DSCEngine__MintFailed();
-		}
     }
 
     /**
