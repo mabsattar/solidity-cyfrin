@@ -56,6 +56,8 @@ contract DSCEngine is ReentrancyGuard {
     error DSCEngine__TokenAddressesAndPriceFeedAddressesMustBeSameLength();
     error DSCEngine__NotAllowedToken();
     error DSCEngine__TransferFailed();
+    error DSCEngine__BreaksHealthFactor(uint256 healthFactor);
+	error DSCEngine__MintFailed();
 
     /////////////////////
     // state variables //
@@ -73,6 +75,7 @@ contract DSCEngine is ReentrancyGuard {
     uint256 private constant PRECISION = 1e18;
     uint256 private constant LIQUIDATION_THRESHOLD = 50;
     uint256 private constant LIQUIDATION_PRECISION = 100;
+    uint256 private constant MIN_HEALTH_FACTOR = 1e18;
 
     ////////////
     // events //
@@ -150,6 +153,8 @@ contract DSCEngine is ReentrancyGuard {
      */
     function mintDsc(uint256 amountDscToMint) public moreThanZero(amountDscToMint) nonReentrant {
         s_DSCMinted[msg.sender] += amountDscToMint;
+        _revertIfHealthFactorIsBroken(msg.sender);
+		bool minted = i_dsc.mint(msg.sender, amountDscToMint);
     }
 
     function burnDsc() external {}
@@ -162,7 +167,16 @@ contract DSCEngine is ReentrancyGuard {
     // private & internal view functions //
     ///////////////////////////////////////
 
-    function _revertIfHealthFactorisBroken(address user) internal view {}
+    function _revertIfHealthFactorIsBroken(address user) internal view {
+        uint256 userHealthFactor = _healthFactor(user);
+        if (userHealthFactor < MIN_HEALTH_FACTOR) {
+            revert DSCEngine__BreaksHealthFactor(userHealthFactor);
+        }
+
+		if(!minted) {
+			revert DSCEngine__MintFailed();
+		}
+    }
 
     /**
      * Returns how close to liquidation a user is
