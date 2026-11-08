@@ -2,6 +2,9 @@
   "../foundry-nft-cu/lib/foundry-devops": {
     "rev": "efff097a87e70c3d15661c9f2a2daeae0b33d5d5"
   },
+  "../lib/openzeppelin-contracts": {
+    "rev": "efaa6f78ab1dde05416246e801c0baaf4f900d49"
+  },
   "lib/chainlink-brownie-contracts": {
     "tag": {
       "name": "0.6.1",
@@ -12,6 +15,12 @@
     "tag": {
       "name": "v1.17.0",
       "rev": "f3dae6e6ee381f25eb6a246f7da9b85c91a68219"
+    }
+  },
+  "lib/openzeppelin-contracts": {
+    "tag": {
+      "name": "v4.9.3",
+      "rev": "fd81a96f01cc42ef1c9a5399364968d0e07e9e90"
     }
   }
 }
