@@ -57,7 +57,7 @@ contract DSCEngine is ReentrancyGuard {
     error DSCEngine__NotAllowedToken();
     error DSCEngine__TransferFailed();
     error DSCEngine__BreaksHealthFactor(uint256 healthFactor);
-	error DSCEngine__MintFailed();
+    error DSCEngine__MintFailed();
 
     /////////////////////
     // state variables //
@@ -154,10 +154,10 @@ contract DSCEngine is ReentrancyGuard {
     function mintDsc(uint256 amountDscToMint) public moreThanZero(amountDscToMint) nonReentrant {
         s_DSCMinted[msg.sender] += amountDscToMint;
         _revertIfHealthFactorIsBroken(msg.sender);
-		bool minted = i_dsc.mint(msg.sender, amountDscToMint);
-		if(!minted) {
-			revert DSCEngine__MintFailed();
-		}
+        bool minted = i_dsc.mint(msg.sender, amountDscToMint);
+        if (!minted) {
+            revert DSCEngine__MintFailed();
+        }
     }
 
     function burnDsc() external {}
@@ -206,7 +206,7 @@ contract DSCEngine is ReentrancyGuard {
     // public & external view functions //
     //////////////////////////////////////
 
-    function getAccountCollateralValue(address user) public pure returns (uint256 totalCollateralValueInUsd) {
+    function getAccountCollateralValue(address user) public view returns (uint256 totalCollateralValueInUsd) {
         for (uint256 i = 0; i < s_collateralTokens.length; i++) {
             address token = s_collateralTokens[i];
             uint256 amount = s_collateralDeposited[user][token];
