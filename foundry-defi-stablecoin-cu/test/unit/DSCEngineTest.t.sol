@@ -7,12 +7,20 @@ import {DeployDSC} from "../../script/DeployDSC.s.sol";
 import {DecentralizedStableCoin} from "../../src/DecentralizedStableCoin.sol";
 import {DSCEngine} from "../../src/DSCEngine.sol";
 import {HelperConfig} from "../../script/HelperConfig.s.sol";
+import {ERC20Mock} from "@openzeppelin/contracts/mocks/ERC20Mock.sol";
 
 contract DSCEngineTest is Test {
+    address USER = makeAddr("user");
+    uint256 public constant AMOUNT_COLLATERAL = 10 ether;
+    uint256 public constant STARTING_ERC20_BALANCE = 10 ether;
+
     DeployDSC deployer;
     DecentralizedStableCoin dsc;
     DSCEngine dsce;
     HelperConfig config;
+
+    ERC20Mock(weth).mint(USER, STARTING_ERC20_BALANCE);
+
     address weth;
     address ethUsdPriceFeed;
 
@@ -25,6 +33,19 @@ contract DSCEngineTest is Test {
     ////////////////
     // Price test //
     ////////////////
-    function testGetUsdValue() public {}
+    function testGetUsdValue() public {
+        // 15e8 * 2000/ETH = 30,000e18
+        uint256 ethAmount = 15e18;
+        uint256 exptedUsd = 30000e18;
+        uint256 actualUsd = dsce.getUsdValue(weth, ethAmount);
+        assertEq(exptedUsd, actualUsd);
+    }
+
+    ////////////////////////////
+    // DepositCollateral test //
+    ////////////////////////////
+    function testRevertsIfCollateralZero() public {
+	
+    }
 }
 
