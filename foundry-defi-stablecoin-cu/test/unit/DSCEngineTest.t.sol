@@ -16,7 +16,7 @@ contract DSCEngineTest is Test {
 
     DeployDSC deployer;
     DecentralizedStableCoin dsc;
-    DSCEngine dsce;
+    DSCEngine engine;
     HelperConfig config;
 
     address weth;
@@ -24,19 +24,19 @@ contract DSCEngineTest is Test {
 
     function setUp() public {
         deployer = new DeployDSC();
-        (dsc, dsce, config) = deployer.run();
-        (ethUsdPriceFeed, , weth, , ) = config.activeNetworkConfig();
+        (dsc, engine, config) = deployer.run();
+        (ethUsdPriceFeed,, weth,,) = config.activeNetworkConfig();
         ERC20Mock(weth).mint(USER, STARTING_ERC20_BALANCE);
     }
 
     ////////////////
     // Price test //
     ////////////////
-    function testGetUsdValue() public {
+    function testGetUsdValue() public view {
         // 15e8 * 2000/ETH = 30,000e18
         uint256 ethAmount = 15e18;
         uint256 exptedUsd = 30000e18;
-        uint256 actualUsd = dsce.getUsdValue(weth, ethAmount);
+        uint256 actualUsd = engine.getUsdValue(weth, ethAmount);
         assertEq(exptedUsd, actualUsd);
     }
 
@@ -45,10 +45,10 @@ contract DSCEngineTest is Test {
     ////////////////////////////
     function testRevertsIfCollateralZero() public {
         vm.startPrank(USER);
-        ERC20Mock(weth).approve(address(dsce), AMOUNT_COLLATERAL);
+        ERC20Mock(weth).approve(address(engine), AMOUNT_COLLATERAL);
 
         vm.expectRevert(DSCEngine.DSCEngine__NeedsMoreThanZero.selector);
-        dsce.depositCollateral(weth, 0);
+        engine.depositCollateral(weth, 0);
         vm.stopPrank();
     }
 }
