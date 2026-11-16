@@ -189,12 +189,15 @@ contract DSCEngine is ReentrancyGuard {
         }
     }
 
-    function burnDsc(uint256 amount) external moreThanZero(amount) {
+    function burnDsc(uint256 amount) public moreThanZero(amount) {
         s_DSCMinted[msg.sender] -= amount;
         bool success = i_dsc.transferFrom(msg.sender, address(this), amount);
         if (!success) {
             revert DSCEngine__TranferFailed();
         }
+        //if they burned too much
+        i_dsc.burn(amount);
+        _revertIfHealthFactorIsBroken(msg.sender); // i dont think this would ever hit.
     }
 
     function liquidate() external {}
