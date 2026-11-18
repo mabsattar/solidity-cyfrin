@@ -158,9 +158,20 @@ contract DSCEngine is ReentrancyGuard {
         mintDsc(amountDscToMint);
     }
 
-    function redeemCollateralForDsc() external {}
+    /**
+     * @param tokenCollateralAddresses: the collateral address to redeem
+     * @param amountCollateral: amount of collateral to redeem
+     * @param amountDscToBurn: amount of DSC to burn
+     * This function burns DSC and redeems underlying collateral in one transaction
+     */
+    function redeemCollateralForDsc(address tokenCollateralAddresses, uint256 amountCollateral, uint256 amountDscToBurn)
+        external
+    {
+        burnDsc(amountDscToBurn);
+        redeemCollateral(tokenCollateralAddresses, amountCollateral);
+    }
 
-    function redeemCollateral(uint256 collateralAmount, address tokenCollateralAddress)
+    function redeemCollateral(address tokenCollateralAddress, uint256 collateralAmount)
         public
         nonReentrant
         moreThanZero(collateralAmount)
