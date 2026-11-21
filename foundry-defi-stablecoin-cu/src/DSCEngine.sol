@@ -59,6 +59,7 @@ contract DSCEngine is ReentrancyGuard {
     error DSCEngine__BreaksHealthFactor(uint256 healthFactor);
     error DSCEngine__MintFailed();
     error DSCEngine__TranferFailed();
+    error DSCEngine__HealthFactorOK();
 
     /////////////////////
     // state variables //
@@ -211,7 +212,35 @@ contract DSCEngine is ReentrancyGuard {
         _revertIfHealthFactorIsBroken(msg.sender); // i dont think this would ever hit.
     }
 
-    function liquidate() external {}
+    // if we do start nearing undercollateralization, we need someone to liquidate positions
+    // $100 ETH backing $50 DSC
+    // $20 backing $50 DSC
+    // Liquidator takes $75 backing abd burns off the $50 DSC
+    // if someone is almost undercolalterlized, we will pay you to liquidate them!
+    /**
+     * @param collateral the erc20 collateral address to liquidate from the user
+     * @param user the user who has broken the health factor. Their _healthFactor should be below MIN_HEALTH_FACTOR
+     * @param debtToCover the amount of DSC you want to burn to improve the users health factor
+     * @notice You can partially liquidate a user.
+     * @notice You will get a liquidation bonus for taking the users funds.
+     * @notice This function working assumes the protocol will be roughly 200% overcollateralized in order for this to work.
+     * @notice a known bug would be if the protocol were 100% or less colalteralized, then we wouldn't be able to incentive the liquidators.
+     * for example, if the price of the collateral plummeted before anyone could be liquidated.
+     */
+    function liquidate(address collateral, address user, uint256 debtToCover)
+        external
+        moreThanZero(debtToCover)
+        nonReentrant
+    {
+        uint256 startingUserHealthFactor = _healthFactor(user);
+        revert DSCEngine__HealthFactorOK();
+        // we want to burn their DSC "debt"
+        // And take their collateral
+        // Bad User: $140 ETH, $100 DSC.
+        // debtToCover = $100
+        // $100 of DSC == ?? ETH??
+        uint256 tokenAmountFromDebtCovered = getTokenAmountFromUsd(collateral, debtToCover);
+    }
 
     function getHealthFactor() external view {}
 
@@ -254,6 +283,11 @@ contract DSCEngine is ReentrancyGuard {
     //////////////////////////////////////
     // public & external view functions //
     //////////////////////////////////////
+
+    function getTokenAmountFromUs(address token, uint256 usdAmountInWei) public view returns (uint256) {
+        // price of ETH (toke)
+        // $ETH
+    }
 
     function getAccountCollateralValue(address user) public view returns (uint256 totalCollateralValueInUsd) {
         for (uint256 i = 0; i < s_collateralTokens.length; i++) {
