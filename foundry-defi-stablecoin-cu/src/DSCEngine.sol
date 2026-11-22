@@ -78,6 +78,7 @@ contract DSCEngine is ReentrancyGuard {
     uint256 private constant LIQUIDATION_THRESHOLD = 50;
     uint256 private constant LIQUIDATION_PRECISION = 100;
     uint256 private constant MIN_HEALTH_FACTOR = 1e18;
+    uint256 private constant LIQUIDATOR_BONUS = 10;
 
     ////////////
     // events //
@@ -172,15 +173,15 @@ contract DSCEngine is ReentrancyGuard {
         redeemCollateral(tokenCollateralAddresses, amountCollateral);
     }
 
-    function redeemCollateral(address tokenCollateralAddress, uint256 collateralAmount)
+    function redeemCollateral(address tokenCollateralAddress, uint256 amountCollateral)
         public
         nonReentrant
-        moreThanZero(collateralAmount)
+        moreThanZero(amountCollateral)
     {
-        s_collateralDeposited[msg.sender][tokenCollateralAddress] -= collateralAmount;
-        emit CollateralRedeemed(msg.sender, tokenCollateralAddress, collateralAmount);
+        s_collateralDeposited[msg.sender][tokenCollateralAddress] -= amountCollateral;
+        emit CollateralRedeemed(msg.sender, tokenCollateralAddress, amountCollateral);
 
-        bool success = IERC20(tokenCollateralAddress).transfer(msg.sender, collateralAmount);
+        bool success = IERC20(tokenCollateralAddress).transfer(msg.sender, amountCollateral);
         if (!success) {
             revert DSCEngine__TransferFailed();
         }
@@ -239,7 +240,16 @@ contract DSCEngine is ReentrancyGuard {
         // Bad User: $140 ETH, $100 DSC.
         // debtToCover = $100
         // $100 of DSC == ?? ETH??
+        // 0.05 ETH
         uint256 tokenAmountFromDebtCovered = getTokenAmountFromUsd(collateral, debtToCover);
+        // And give them 10% bonus
+        // so we are giving the liquidator %110 of WETH for 100 DSC
+        // we should imlement a feature to liquidate in the event the protocol is insolvent
+        // and sweep extra amounts into a treasury
+
+        // 0.05 ETH * .1 = 0.005. Get 0.055
+        uint256 bonusCollateral = (tokenAmountFromDebtCovered * LIQUIDATOR_BONUS) / LIQUIDATION_PRECISION;
+        uint256 totalColalteralToRedeem = tokenAmountFromDebtCovered + bonusCollateral;
     }
 
     function getHealthFactor() external view {}
@@ -247,6 +257,18 @@ contract DSCEngine is ReentrancyGuard {
     ///////////////////////////////////////
     // private & internal view functions //
     ///////////////////////////////////////
+
+    function _redeemCollateral(address tokenCollateralAddress, uint256 amountCollateral, address from, address to)
+        private
+    {
+        s_collateralDeposited[msg.sender][tokenCollateralAddress] -= amountCollateral;
+        emit CollateralRedeemed(msg.sender, tokenCollateralAddress, amountCollateral);
+
+        bool success = IERC20(tokenCollateralAddress).transfer(msg.sender, amountCollateral);
+        if (!success) {
+            revert DSCEngine__TransferFailed();
+        }
+    }
 
     function _revertIfHealthFactorIsBroken(address user) internal view {
         uint256 userHealthFactor = _healthFactor(user);
