@@ -78,14 +78,16 @@ contract DSCEngine is ReentrancyGuard {
     uint256 private constant LIQUIDATION_THRESHOLD = 50;
     uint256 private constant LIQUIDATION_PRECISION = 100;
     uint256 private constant MIN_HEALTH_FACTOR = 1e18;
-    uint256 private constant LIQUIDATOR_BONUS = 10;
+    uint256 private constant LIQUIDATION_BONUS = 10;
 
     ////////////
     // events //
     ////////////
 
     event CollateralDeposited(address indexed user, address indexed token, uint256 indexed amount);
-    event CollateralRedeemed(address indexed user, address indexed token, uint256 indexed amount);
+    event CollateralRedeemed(
+        address indexed redeemedFrom, address indexed redeemedTo, address indexed token, uint256 amount
+    );
 
     ///////////////
     // modifiers //
@@ -178,14 +180,7 @@ contract DSCEngine is ReentrancyGuard {
         nonReentrant
         moreThanZero(amountCollateral)
     {
-        s_collateralDeposited[msg.sender][tokenCollateralAddress] -= amountCollateral;
-        emit CollateralRedeemed(msg.sender, tokenCollateralAddress, amountCollateral);
-
-        bool success = IERC20(tokenCollateralAddress).transfer(msg.sender, amountCollateral);
-        if (!success) {
-            revert DSCEngine__TransferFailed();
-        }
-
+        _redeemCollateral(tokenCollateralAddress, amountCollateral, msg.sender, msg.sender);
         _revertIfHealthFactorIsBroken(msg.sender);
     }
 
@@ -248,7 +243,7 @@ contract DSCEngine is ReentrancyGuard {
         // and sweep extra amounts into a treasury
 
         // 0.05 ETH * .1 = 0.005. Get 0.055
-        uint256 bonusCollateral = (tokenAmountFromDebtCovered * LIQUIDATOR_BONUS) / LIQUIDATION_PRECISION;
+        uint256 bonusCollateral = (tokenAmountFromDebtCovered * LIQUIDATION_BONUS) / LIQUIDATION_PRECISION;
         uint256 totalColalteralToRedeem = tokenAmountFromDebtCovered + bonusCollateral;
     }
 
@@ -261,10 +256,10 @@ contract DSCEngine is ReentrancyGuard {
     function _redeemCollateral(address tokenCollateralAddress, uint256 amountCollateral, address from, address to)
         private
     {
-        s_collateralDeposited[msg.sender][tokenCollateralAddress] -= amountCollateral;
-        emit CollateralRedeemed(msg.sender, tokenCollateralAddress, amountCollateral);
+        s_collateralDeposited[from][tokenCollateralAddress] -= amountCollateral;
+        emit CollateralRedeemed(from, to, tokenCollateralAddress, amountCollateral);
 
-        bool success = IERC20(tokenCollateralAddress).transfer(msg.sender, amountCollateral);
+        bool success = IERC20(tokenCollateralAddress).transfer(to, amountCollateral);
         if (!success) {
             revert DSCEngine__TransferFailed();
         }
@@ -306,9 +301,14 @@ contract DSCEngine is ReentrancyGuard {
     // public & external view functions //
     //////////////////////////////////////
 
-    function getTokenAmountFromUs(address token, uint256 usdAmountInWei) public view returns (uint256) {
+    function getTokenAmountFromUsd(address token, uint256 usdAmountInWei) public view returns (uint256) {
         // price of ETH (toke)
-        // $ETH
+        // $/ETH ETH ?
+        // $2000 /ETH. $1000 = 0.5 ETH
+        AggregatorV3Interface priceFeed = AggregatorV3Interface(s_priceFeeds[token]);
+        (, int256 price,,,) = priceFeed.latestRoundData();
+        // ($10e18 * 1e18) / ($2000e8 * 1e18)
+        (usdAmountInWei * PRECISION) / uint256(price);
     }
 
     function getAccountCollateralValue(address user) public view returns (uint256 totalCollateralValueInUsd) {
