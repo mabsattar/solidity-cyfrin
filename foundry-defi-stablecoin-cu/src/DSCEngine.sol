@@ -60,6 +60,7 @@ contract DSCEngine is ReentrancyGuard {
     error DSCEngine__MintFailed();
     error DSCEngine__TranferFailed();
     error DSCEngine__HealthFactorOK();
+    error DSCEngine__HealthFactorNotImproved();
 
     /////////////////////
     // state variables //
@@ -223,7 +224,9 @@ contract DSCEngine is ReentrancyGuard {
         nonReentrant
     {
         uint256 startingUserHealthFactor = _healthFactor(user);
-        revert DSCEngine__HealthFactorOK();
+        if (startingUserHealthFactor >= MIN_HEALTH_FACTOR) {
+            revert DSCEngine__HealthFactorOK();
+        }
         // we want to burn their DSC "debt"
         // And take their collateral
         // Bad User: $140 ETH, $100 DSC.
@@ -240,6 +243,14 @@ contract DSCEngine is ReentrancyGuard {
         uint256 bonusCollateral = (tokenAmountFromDebtCovered * LIQUIDATION_BONUS) / LIQUIDATION_PRECISION;
         uint256 totalCollateralToRedeem = tokenAmountFromDebtCovered + bonusCollateral;
         _redeemCollateral(collateral, totalCollateralToRedeem, user, msg.sender);
+        _burnDsc(debtToCover, user, msg.sender);
+
+        uint256 endingUserHealthFactor = _healthFactor(user);
+        if (endingUserHealthFactor <= startingUserHealthFactor) {
+            revert DSCEngine__HealthFactorNotImproved();
+        }
+
+        _revertIfHealthFactorIsBroken(msg.sender);
     }
 
     function getHealthFactor() external view {}
