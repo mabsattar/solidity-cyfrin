@@ -198,14 +198,8 @@ contract DSCEngine is ReentrancyGuard {
     }
 
     function burnDsc(uint256 amount) public moreThanZero(amount) {
-        s_DSCMinted[msg.sender] -= amount;
-        bool success = i_dsc.transferFrom(msg.sender, address(this), amount);
-        if (!success) {
-            revert DSCEngine__TranferFailed();
-        }
-        //if they burned too much
-        i_dsc.burn(amount);
-        _revertIfHealthFactorIsBroken(msg.sender); // i dont think this would ever hit.
+        _burnDsc(amount, msg.sender, msg.sender);
+        _revertIfHealthFactorIsBroken(msg.sender);
     }
 
     // if we do start nearing undercollateralization, we need someone to liquidate positions
@@ -244,7 +238,8 @@ contract DSCEngine is ReentrancyGuard {
 
         // 0.05 ETH * .1 = 0.005. Get 0.055
         uint256 bonusCollateral = (tokenAmountFromDebtCovered * LIQUIDATION_BONUS) / LIQUIDATION_PRECISION;
-        uint256 totalColalteralToRedeem = tokenAmountFromDebtCovered + bonusCollateral;
+        uint256 totalCollateralToRedeem = tokenAmountFromDebtCovered + bonusCollateral;
+        _redeemCollateral(collateral, totalCollateralToRedeem, user, msg.sender);
     }
 
     function getHealthFactor() external view {}
@@ -252,6 +247,21 @@ contract DSCEngine is ReentrancyGuard {
     ///////////////////////////////////////
     // private & internal view functions //
     ///////////////////////////////////////
+
+    /*
+     * @dev Low-level internal function, do not call unless the function calling it is
+     * checking for healt factors being broken
+     */
+    function _burnDsc(uint256 amountDscTo, address onBehalfOf, address dscFrom) private {
+        s_DSCMinted[onBehalfOf] -= amountDscTo;
+        bool success = i_dsc.transferFrom(msg.sender, address(this), amountDscTo);
+        if (!success) {
+            revert DSCEngine__TranferFailed();
+        }
+        //if they burned too much
+        i_dsc.burn(amountDscTo);
+        _revertIfHealthFactorIsBroken(msg.sender);
+    }
 
     function _redeemCollateral(address tokenCollateralAddress, uint256 amountCollateral, address from, address to)
         private
